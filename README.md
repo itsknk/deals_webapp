@@ -47,4 +47,3 @@ visit:
 - flask + jwt + mysql
 - google goauth 2.0 for customer login
 - session-based auth for viewer
-```
