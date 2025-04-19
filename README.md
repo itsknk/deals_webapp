@@ -27,7 +27,29 @@ this will:
 - copy `.env.example` to `.env`
 
 ### 3. update `.env`
-edit the `.env` file and fill in your own google oauth creds or use the provided ones if available.
+edit the `.env` file and fill in your own google oauth creds or use the provided ones if available. also, make sure to fill the db creds.
+```env
+MYSQL_HOST=localhost
+MYSQL_USER=your_mysql_user
+MYSQL_PASSWORD=your_password
+MYSQL_DB=dealsdb
+```
+
+### 4. database setup
+
+before running the app, create the mysql db and table using the provided `schema.sql`.
+
+### start your mysql server, then log in:
+
+```bash
+mysql -u your_mysql_user -p
+```
+
+### run the schema:
+
+```sql
+SOURCE schema.sql;
+```
 
 ---
 
