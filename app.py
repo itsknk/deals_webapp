@@ -242,7 +242,7 @@ def customer_login():
     session["post_login_redirect"] = redirect_uri  # store where to go after login
     return redirect(authorization_url)
 
-
+# now stores user data to the db
 @app.route("/customer/callback")
 def customer_callback():
     google_provider_cfg = get_google_provider_cfg()
@@ -263,10 +263,31 @@ def customer_callback():
     userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
     userinfo_response = google.get(userinfo_endpoint).json()
 
+    email = userinfo_response["email"]
+    name = userinfo_response["name"]
+    picture = userinfo_response["picture"]
+
+    # save to db if this user is new
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT * FROM customers WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.execute(
+            "INSERT INTO customers (email, name, picture) VALUES (%s, %s, %s)",
+            (email, name, picture)
+        )
+        connection.commit()
+
+    cursor.close()
+    connection.close()
+
     session["user"] = {
-        "email": userinfo_response["email"],
-        "name": userinfo_response["name"],
-        "picture": userinfo_response["picture"]
+        "email": email,
+        "name": name,
+        "picture": picture
     }
 
     return redirect(session.get("post_login_redirect", "/viewer"))
