@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login to View Deals</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f4f4;
+      text-align: center;
+      padding-top: 100px;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 18px;
+      background: #4285F4;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2c66d8;
+    }
+  </style>
+</head>
+<body>
+  <h2>Welcome to Deals Viewer</h2>
+  <p>Please sign in with Google to continue.</p>
+  <button onclick="location.href='/customer/login?redirect=/viewer'">Sign in with Google</button>
+</body>
+</html>

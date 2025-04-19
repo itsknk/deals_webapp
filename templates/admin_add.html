@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Add New Deal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      color: #444;
+    }
+    form {
+      background: white;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #28a745;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #218838;
+    }
+    .back-btn {
+      display: block;
+      margin: 20px auto;
+      text-align: center;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>➕ Add New Deal</h1>
+  <form id="dealForm">
+    <input type="text" placeholder="Title" id="title" required />
+    <input type="number" step="0.01" placeholder="Price" id="price" required />
+    <input type="date" placeholder="Expiry Date" id="expiry_date" required />
+    <input type="text" placeholder="Promotion" id="promotion" />
+    <textarea placeholder="Description" id="description" rows="3"></textarea>
+    <input type="url" placeholder="Affiliate Link" id="affiliate_link" required />
+    <button type="submit">Submit Deal</button>
+  </form>
+  <a href="/admin/dashboard" class="back-btn">← Back to Dashboard</a>
+
+  <script>
+    const form = document.getElementById('dealForm');
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Unauthorized. Please log in.");
+      window.location.href = "/admin/login";
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const deal = {
+        title: document.getElementById("title").value,
+        price: parseFloat(document.getElementById("price").value),
+        expiry_date: document.getElementById("expiry_date").value,
+        promotion: document.getElementById("promotion").value,
+        description: document.getElementById("description").value,
+        affiliate_link: document.getElementById("affiliate_link").value
+      };
+
+      fetch("/deals", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(deal)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Deal creation failed");
+        alert("Deal added successfully!");
+        window.location.href = "/admin/dashboard";
+      })
+      .catch(err => {
+        console.error(err);
+        alert("Failed to create deal.");
+      });
+    });
+  </script>
+</body>
+</html>

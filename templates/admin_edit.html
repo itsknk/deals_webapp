@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Edit Deal</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      color: #444;
+    }
+    form {
+      background: white;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 25px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    .back-btn {
+      display: block;
+      margin: 20px auto;
+      text-align: center;
+      color: #007bff;
+      text-decoration: none;
+    }
+    .back-btn:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>✏️ Edit Deal</h1>
+  <form id="editForm">
+    <input type="text" id="title" placeholder="Title" required />
+    <input type="number" id="price" placeholder="Price" step="0.01" required />
+    <input type="date" id="expiry_date" required />
+    <input type="text" id="promotion" placeholder="Promotion" />
+    <textarea id="description" placeholder="Description" rows="3"></textarea>
+    <input type="url" id="affiliate_link" placeholder="Affiliate Link" required />
+    <button type="submit">Update Deal</button>
+  </form>
+  <a href="/admin/dashboard" class="back-btn">← Back to Dashboard</a>
+
+  <script>
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Unauthorized. Please log in.");
+      window.location.href = "/admin/login";
+    }
+
+    const id = window.location.pathname.split("/").pop();
+    const form = document.getElementById("editForm");
+
+    // Load deal data
+    fetch(`/deals/${id}`, {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    })
+    .then(res => res.json())
+    .then(deal => {
+      document.getElementById("title").value = deal.title;
+      document.getElementById("price").value = deal.price;
+      document.getElementById("expiry_date").value = deal.expiry_date;
+      document.getElementById("promotion").value = deal.promotion;
+      document.getElementById("description").value = deal.description;
+      document.getElementById("affiliate_link").value = deal.affiliate_link;
+    })
+    .catch(err => {
+      alert("Failed to load deal.");
+      console.error(err);
+    });
+
+    // Submit updated deal
+    form.addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const deal = {
+        title: document.getElementById("title").value,
+        price: parseFloat(document.getElementById("price").value),
+        expiry_date: document.getElementById("expiry_date").value,
+        promotion: document.getElementById("promotion").value,
+        description: document.getElementById("description").value,
+        affiliate_link: document.getElementById("affiliate_link").value
+      };
+
+      fetch(`/deals/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + token
+        },
+        body: JSON.stringify(deal)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error("Update failed");
+        alert("Deal updated successfully!");
+        window.location.href = "/admin/dashboard";
+      })
+      .catch(err => {
+        alert("Failed to update deal.");
+        console.error(err);
+      });
+    });
+  </script>
+</body>
+</html>

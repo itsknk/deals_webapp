@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Deals Viewer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background-color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    th, td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #eee;
+    }
+    th {
+      background-color: #f1f1f1;
+      font-weight: bold;
+    }
+    tr:hover {
+      background-color: #f9f9f9;
+    }
+    a {
+      color: #007BFF;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>Live Deals</h1>
+  <h2>Welcome, {{ user.name }}</h2>
+<img src="{{ user.picture }}" alt="Profile Picture" width="50" />
+<a href="/logout">Logout</a>
+  <table id="dealsTable">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Title</th>
+        <th>Price</th>
+        <th>Expires</th>
+        <th>Promotion</th>
+        <th>Description</th>
+        <th>Link</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    fetch('/deals')
+      .then(res => res.json())
+      .then(deals => {
+        const tbody = document.querySelector('#dealsTable tbody');
+        deals.forEach(deal => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${deal.dealid}</td>
+            <td>${deal.title}</td>
+            <td>$${deal.price}</td>
+            <td>${deal.expiry_date}</td>
+            <td>${deal.promotion}</td>
+            <td>${deal.description}</td>
+            <td><a href="${deal.affiliate_link}" target="_blank">View</a></td>
+          `;
+          tbody.appendChild(row);
+        });
+      })
+      .catch(err => {
+        alert('Failed to load deals.');
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
