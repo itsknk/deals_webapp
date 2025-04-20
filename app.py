@@ -177,6 +177,11 @@ def delete_deal(dealid):
     connection = get_db_connection()
     cursor = connection.cursor()
 
+    # first remove from saved_deals (child table)
+    cursor.execute("DELETE FROM saved_deals WHERE deal_id = %s", (dealid,))
+    connection.commit()
+
+    # then remove from deals (parent table)
     cursor.execute("DELETE FROM deals WHERE dealid = %s", (dealid,))
     connection.commit()
 
@@ -224,7 +229,7 @@ def viewer():
     cursor.execute(query, tuple(params))
     deals = cursor.fetchall()
 
-    # --- Get current user's saved deal IDs ---
+    # --- get current user's saved deal ids ---
     email = session["user"]["email"]
     cursor.execute("SELECT id FROM customers WHERE email = %s", (email,))
     customer = cursor.fetchone()
