@@ -92,8 +92,8 @@ def create_deal():
 
     query = """
         INSERT INTO deals 
-        (title, price, expiry_date, promotion, description, affiliate_link)
-        VALUES (%s, %s, %s, %s, %s, %s)
+        (title, price, expiry_date, promotion, description, affiliate_link, category)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
     cursor.execute(query, (
         data['title'],
@@ -101,13 +101,15 @@ def create_deal():
         data['expiry_date'],
         data['promotion'],
         data['description'],
-        data['affiliate_link']
+        data['affiliate_link'],
+        data.get('category')
     ))
 
     connection.commit()
     cursor.close()
     connection.close()
     return jsonify({"message": "Deal created"}), 201
+
 
 # simple get api
 @app.route('/deals', methods=['GET'])
@@ -149,7 +151,7 @@ def update_deal(dealid):
     query = """
         UPDATE deals 
         SET title=%s, price=%s, expiry_date=%s, 
-            promotion=%s, description=%s, affiliate_link=%s
+            promotion=%s, description=%s, affiliate_link=%s, category=%s
         WHERE dealid=%s
     """
     cursor.execute(query, (
@@ -159,6 +161,7 @@ def update_deal(dealid):
         data['promotion'],
         data['description'],
         data['affiliate_link'],
+        data.get('category'),
         dealid
     ))
 
@@ -181,15 +184,17 @@ def delete_deal(dealid):
     connection.close()
     return jsonify({"message": "Deal deleted"}), 200
 
-## now filters, sorts and saves!
+## now filters, sorts, saves and tracks!
 @app.route('/viewer')
 def viewer():
     if "user" not in session:
         return render_template('viewer_login.html')
 
+    # --- filters & sorting ---
     filter_option = request.args.get("filter")
     sort_by = request.args.get("sort_by")
     sort_order = request.args.get("sort_order", "asc")
+    category = request.args.get("category")
 
     query = "SELECT * FROM deals WHERE 1=1"
     params = []
@@ -197,26 +202,29 @@ def viewer():
     if filter_option == "under50":
         query += " AND price < 50"
     elif filter_option == "this_week":
-        from datetime import datetime, timedelta
         next_week = (datetime.utcnow() + timedelta(days=7)).date()
         query += " AND expiry_date <= %s"
         params.append(next_week)
     elif filter_option == "this_month":
-        from datetime import datetime, timedelta
         next_month = (datetime.utcnow().replace(day=28) + timedelta(days=4)).replace(day=1)
         query += " AND expiry_date <= %s"
         params.append(next_month.date())
 
-    # sort the deals by price and expiry    
+    if category:
+        query += " AND category = %s"
+        params.append(category)
+
     if sort_by in ["price", "expiry_date"]:
         query += f" ORDER BY {sort_by} {sort_order.upper()}"
 
     connection = get_db_connection()
     cursor = connection.cursor(dictionary=True)
+
+    # --- get all filtered deals ---
     cursor.execute(query, tuple(params))
     deals = cursor.fetchall()
 
-    # get saved deals for current user
+    # --- Get current user's saved deal IDs ---
     email = session["user"]["email"]
     cursor.execute("SELECT id FROM customers WHERE email = %s", (email,))
     customer = cursor.fetchone()
@@ -227,10 +235,33 @@ def viewer():
         saved = cursor.fetchall()
         saved_ids = [s["deal_id"] for s in saved]
 
+    # --- get top 5 trending deals (most saved) ---
+    cursor.execute("""
+        SELECT d.*, COUNT(s.id) as save_count
+        FROM deals d
+        JOIN saved_deals s ON d.dealid = s.deal_id
+        GROUP BY d.dealid
+        ORDER BY save_count DESC
+        LIMIT 5
+    """)
+    trending_deals = cursor.fetchall()
+
+    # --- get distinct categories for dropdown ---
+    cursor.execute("SELECT DISTINCT category FROM deals WHERE category IS NOT NULL AND category != ''")
+    all_categories = [row["category"] for row in cursor.fetchall()]
+
     cursor.close()
     connection.close()
 
-    return render_template('viewer.html', user=session["user"], deals=deals, saved_ids=saved_ids)
+    # --- render template with all data ---
+    return render_template(
+        'viewer.html',
+        user=session["user"],
+        deals=deals,
+        saved_ids=saved_ids,
+        trending_deals=trending_deals,
+        all_categories=all_categories
+    )
 
 
 
