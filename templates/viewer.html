@@ -127,7 +127,9 @@
     <div class="profile">
       <a href="/viewer/saved" style="margin-right: 15px;">My Saved Deals</a>
       <a href="/logout">Logout</a>
-      <img src="{{ user.picture }}" alt="Profile" />
+      <a href="/viewer/profile" title="View Profile">
+        <img src="{{ user.picture }}" alt="Profile" style="cursor: pointer;" />
+      </a>
     </div>
   </div>
 

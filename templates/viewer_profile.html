@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Your Profile</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f8f8;
+      text-align: center;
+      padding: 40px;
+    }
+    .profile-card {
+      background: white;
+      display: inline-block;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.08);
+    }
+    img {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin-bottom: 15px;
+    }
+    h2 {
+      margin-bottom: 5px;
+    }
+    .back-link {
+      display: block;
+      margin-top: 25px;
+      text-decoration: none;
+      color: #007bff;
+      font-weight: bold;
+    }
+    .back-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="profile-card">
+    <img src="{{ user.picture }}" />
+    <h2>
+      <span id="displayName">{{ user.name }}</span>
+      <input type="text" id="nameInput" style="display:none;" />
+      <button onclick="enableEdit()" id="editBtn">✏️</button>
+      <button onclick="saveName()" style="display:none;" id="saveBtn">💾</button>
+    </h2>
+    <p><strong>Email:</strong> {{ user.email }}</p>
+    <p><strong>Total Saved Deals:</strong> {{ saved_count }}</p>
+
+    {% if category_stats %}
+    <p><strong>Favorite Categories:</strong></p>
+    <ul style="text-align: left;">
+      {% for row in category_stats %}
+      <li>{{ row.category }} ({{ row.count }})</li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p style="color: #999;">No saved categories yet.</p>
+    {% endif %}
+
+    <a href="/viewer" class="back-link">← Back to Dashboard</a>
+  </div>
+  <script>
+  function enableEdit() {
+    const nameEl = document.getElementById('displayName');
+    const inputEl = document.getElementById('nameInput');
+    const saveBtn = document.getElementById('saveBtn');
+    const editBtn = document.getElementById('editBtn');
+
+    inputEl.value = nameEl.textContent;
+    nameEl.style.display = 'none';
+    inputEl.style.display = 'inline-block';
+    saveBtn.style.display = 'inline-block';
+    editBtn.style.display = 'none';
+  }
+
+  function saveName() {
+    const newName = document.getElementById('nameInput').value;
+
+    fetch('/viewer/update_name', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: newName })
+    })
+    .then(res => {
+      if (res.ok) {
+        document.getElementById('displayName').textContent = newName;
+        document.getElementById('displayName').style.display = 'inline';
+        document.getElementById('nameInput').style.display = 'none';
+        document.getElementById('saveBtn').style.display = 'none';
+        document.getElementById('editBtn').style.display = 'inline';
+      } else {
+        alert("Failed to update name.");
+      }
+    });
+  }
+</script>
+</body>
+</html>

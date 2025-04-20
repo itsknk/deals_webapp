@@ -268,6 +268,67 @@ def viewer():
         all_categories=all_categories
     )
 
+# dedicated viewer section
+@app.route('/viewer/profile')
+def viewer_profile():
+    if "user" not in session:
+        return redirect("/viewer")
+
+    email = session["user"]["email"]
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("SELECT * FROM customers WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    # get saved deal count
+    cursor.execute("SELECT COUNT(*) as saved_count FROM saved_deals WHERE customer_id = %s", (user["id"],))
+    saved_count = cursor.fetchone()["saved_count"]
+
+    # get category preferences
+    cursor.execute("""
+        SELECT d.category, COUNT(*) as count
+        FROM saved_deals s
+        JOIN deals d ON s.deal_id = d.dealid
+        WHERE s.customer_id = %s AND d.category IS NOT NULL
+        GROUP BY d.category
+        ORDER BY count DESC
+    """, (user["id"],))
+    category_stats = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return render_template("viewer_profile.html",
+                           user=session["user"],
+                           saved_count=saved_count,
+                           category_stats=category_stats)
+
+# modify user details (for now name)
+@app.route('/viewer/update_name', methods=['POST'])
+def update_name():
+    if "user" not in session:
+        return jsonify({"message": "Unauthorized"}), 403
+
+    new_name = request.json.get("name", "").strip()
+    if not new_name:
+        return jsonify({"message": "Name cannot be empty"}), 400
+
+    email = session["user"]["email"]
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # update name in db
+    cursor.execute("UPDATE customers SET name = %s WHERE email = %s", (new_name, email))
+    connection.commit()
+
+    # update session too
+    session["user"]["name"] = new_name
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({"message": "Name updated successfully"})
 
 
 ## save a deal
@@ -384,6 +445,51 @@ def admin_add():
 @app.route('/admin/edit/<int:dealid>')
 def admin_edit(dealid):
     return render_template('admin_edit.html')
+
+# renders the stats page. this is NOT PROTECTED by jwt
+@app.route('/admin/stats/view')
+def admin_stats_page():
+    return render_template("admin_stats.html")
+
+# sends json stats and it's PROTECTED
+@app.route('/admin/stats')
+@jwt_required()
+def admin_stats_api():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("SELECT COUNT(*) as total FROM customers")
+    total_customers = cursor.fetchone()["total"]
+
+    cursor.execute("SELECT COUNT(*) as total FROM deals")
+    total_deals = cursor.fetchone()["total"]
+
+    cursor.execute("""
+        SELECT d.title, COUNT(s.id) AS save_count
+        FROM deals d
+        JOIN saved_deals s ON d.dealid = s.deal_id
+        GROUP BY d.dealid
+        ORDER BY save_count DESC
+        LIMIT 5
+    """)
+    top_saved_deals = cursor.fetchall()
+
+    cursor.execute("""
+        SELECT d.title, d.click_count FROM deals d
+        ORDER BY d.click_count DESC
+        LIMIT 5
+    """)
+    deal_clicks = cursor.fetchall()
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({
+        "total_customers": total_customers,
+        "total_deals": total_deals,
+        "top_saved_deals": top_saved_deals,
+        "deal_clicks": deal_clicks
+    })
 
 
 ## CLIENT GOOGLE LOGIN AREA
