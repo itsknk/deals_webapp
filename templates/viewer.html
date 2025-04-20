@@ -74,6 +74,36 @@
     a:hover {
       text-decoration: underline;
     }
+
+    .trending-container {
+      text-align: center;
+      margin-top: 30px;
+    }
+
+    .trending-cards {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    margin-top: 10px;
+    margin-bottom: 30px;
+    }
+
+  .trending-cards .card {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    width: 220px;
+    padding: 15px;
+    text-align: left;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.2s;
+  }
+
+  .trending-cards .card:hover {
+    transform: scale(1.02);
+  }
+
   </style>
 
   <script>
@@ -126,12 +156,44 @@
     <option value="desc">Desc</option>
   </select>
 
+  <label style="margin-left: 20px;">Category:</label>
+  <select name="category">
+    <option value="">All</option>
+    {% for cat in all_categories %}
+    <option value="{{ cat }}" {% if cat == request.args.get('category') %}selected{% endif %}>{{ cat }}</option>
+    {% endfor %}
+  </select>
+
   <button type="submit" style="margin-left: 15px; padding: 6px 14px;">Apply</button>
 </form>
 
 {% if deals|length == 0 %}
   <p style="text-align: center; font-weight: bold; color: #999;">No deals found.</p>
 {% else %}
+
+  {% if trending_deals %}
+  <div class="trending-container">
+    <h2>🔥 Trending Deals</h2>
+    <div class="trending-cards">
+      {% for deal in trending_deals %}
+      <div class="card">
+        <h3>{{ deal.title }}</h3>
+        <p><strong>Price:</strong> ${{ '%.2f' % deal.price }}</p>
+        <p><strong>Expires:</strong> {{ deal.expiry_date }}</p>
+        <p><strong>Saved:</strong> {{ deal.save_count }}</p>
+        <p>
+          <a href="{{ deal.affiliate_link }}" target="_blank">View</a> |
+          {% if deal.dealid in saved_ids %}
+            <a href="/unsave/{{ deal.dealid }}">❤️</a>
+          {% else %}
+            <a href="/save/{{ deal.dealid }}">Save</a>
+          {% endif %}
+        </p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
 
   <table>
     <thead>
@@ -142,6 +204,7 @@
         <th>Expires</th>
         <th>Promotion</th>
         <th>Description</th>
+        <th>Category</th>
         <th>Link</th>
       </tr>
     </thead>
@@ -154,19 +217,22 @@
         <td>{{ deal.expiry_date }}</td>
         <td>{{ deal.promotion }}</td>
         <td>{{ deal.description }}</td>
+        <td>{{ deal.category or '-' }}</td>
         <td>
           <a href="{{ deal.affiliate_link }}" target="_blank">View</a> |
-            {% if deal.dealid in saved_ids %}
+          {% if deal.dealid in saved_ids %}
             <a href="/unsave/{{ deal.dealid }}">❤️</a>
-            {% else %}
-          <a href="/save/{{ deal.dealid }}">Save</a>
-            {% endif %}
+          {% else %}
+            <a href="/save/{{ deal.dealid }}">Save</a>
+          {% endif %}
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+
 {% endif %}
+
 
 </body>
 </html>

@@ -76,6 +76,7 @@
         <th>Expiry</th>
         <th>Promotion</th>
         <th>Description</th>
+        <th>Category</th> <!-- ✅ NEW -->
         <th>Link</th>
         <th>Actions</th>
       </tr>
@@ -107,6 +108,7 @@
           <td>${deal.expiry_date}</td>
           <td>${deal.promotion}</td>
           <td>${deal.description}</td>
+          <td>${deal.category || '-'}</td> <!-- ✅ NEW -->
           <td><a href="${deal.affiliate_link}" target="_blank">View</a></td>
           <td>
             <button class="edit-btn" onclick="editDeal(${deal.dealid})">Edit</button>

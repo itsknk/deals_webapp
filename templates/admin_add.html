@@ -64,6 +64,7 @@
     <input type="text" placeholder="Promotion" id="promotion" />
     <textarea placeholder="Description" id="description" rows="3"></textarea>
     <input type="url" placeholder="Affiliate Link" id="affiliate_link" required />
+    <input type="text" placeholder="Category" id="category" required /> <!-- ✅ NEW -->
     <button type="submit">Submit Deal</button>
   </form>
   <a href="/admin/dashboard" class="back-btn">← Back to Dashboard</a>
@@ -86,7 +87,8 @@
         expiry_date: document.getElementById("expiry_date").value,
         promotion: document.getElementById("promotion").value,
         description: document.getElementById("description").value,
-        affiliate_link: document.getElementById("affiliate_link").value
+        affiliate_link: document.getElementById("affiliate_link").value,
+        category: document.getElementById("category").value  // ✅ NEW
       };
 
       fetch("/deals", {

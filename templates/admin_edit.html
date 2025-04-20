@@ -56,78 +56,66 @@
   </style>
 </head>
 <body>
-  <h1>✏️ Edit Deal</h1>
-  <form id="editForm">
-    <input type="text" id="title" placeholder="Title" required />
-    <input type="number" id="price" placeholder="Price" step="0.01" required />
-    <input type="date" id="expiry_date" required />
-    <input type="text" id="promotion" placeholder="Promotion" />
-    <textarea id="description" placeholder="Description" rows="3"></textarea>
-    <input type="url" id="affiliate_link" placeholder="Affiliate Link" required />
+  <h1>Edit Deal</h1>
+
+  <form id="editDealForm">
+    <input type="text" placeholder="Title" id="title" required /><br />
+    <input type="number" step="0.01" placeholder="Price" id="price" required /><br />
+    <input type="date" placeholder="Expiry Date" id="expiry_date" required /><br />
+    <input type="text" placeholder="Promotion" id="promotion" required /><br />
+    <textarea placeholder="Description" id="description" required></textarea><br />
+    <input type="text" placeholder="Affiliate Link" id="affiliate_link" required /><br />
+    <input type="text" placeholder="Category" id="category" required /><br />
     <button type="submit">Update Deal</button>
   </form>
-  <a href="/admin/dashboard" class="back-btn">← Back to Dashboard</a>
 
   <script>
+    const dealId = window.location.pathname.split("/").pop();
     const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Unauthorized. Please log in.");
-      window.location.href = "/admin/login";
-    }
 
-    const id = window.location.pathname.split("/").pop();
-    const form = document.getElementById("editForm");
+    async function loadDeal() {
+      const res = await fetch(`/deals/${dealId}`);
+      const deal = await res.json();
 
-    // Load deal data
-    fetch(`/deals/${id}`, {
-      headers: {
-        "Authorization": "Bearer " + token
-      }
-    })
-    .then(res => res.json())
-    .then(deal => {
       document.getElementById("title").value = deal.title;
       document.getElementById("price").value = deal.price;
       document.getElementById("expiry_date").value = deal.expiry_date;
       document.getElementById("promotion").value = deal.promotion;
       document.getElementById("description").value = deal.description;
       document.getElementById("affiliate_link").value = deal.affiliate_link;
-    })
-    .catch(err => {
-      alert("Failed to load deal.");
-      console.error(err);
-    });
+      document.getElementById("category").value = deal.category || '';
+    }
 
-    // Submit updated deal
-    form.addEventListener("submit", function (e) {
+    loadDeal();
+
+    document.getElementById("editDealForm").addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      const deal = {
+      const updatedDeal = {
         title: document.getElementById("title").value,
-        price: parseFloat(document.getElementById("price").value),
+        price: document.getElementById("price").value,
         expiry_date: document.getElementById("expiry_date").value,
         promotion: document.getElementById("promotion").value,
         description: document.getElementById("description").value,
-        affiliate_link: document.getElementById("affiliate_link").value
+        affiliate_link: document.getElementById("affiliate_link").value,
+        category: document.getElementById("category").value
       };
 
-      fetch(`/deals/${id}`, {
+      const res = await fetch(`/deals/${dealId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer " + token
+          Authorization: "Bearer " + token,
         },
-        body: JSON.stringify(deal)
-      })
-      .then(res => {
-        if (!res.ok) throw new Error("Update failed");
-        alert("Deal updated successfully!");
-        window.location.href = "/admin/dashboard";
-      })
-      .catch(err => {
-        alert("Failed to update deal.");
-        console.error(err);
+        body: JSON.stringify(updatedDeal),
       });
+
+      if (res.ok) {
+        alert("Deal updated!");
+        location.href = "/admin/dashboard";
+      } else {
+        alert("Failed to update deal");
+      }
     });
   </script>
 </body>
