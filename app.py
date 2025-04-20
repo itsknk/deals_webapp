@@ -181,13 +181,12 @@ def delete_deal(dealid):
     connection.close()
     return jsonify({"message": "Deal deleted"}), 200
 
-## now filters and sorts!
+## now filters, sorts and saves!
 @app.route('/viewer')
 def viewer():
     if "user" not in session:
         return render_template('viewer_login.html')
 
-    # Filters
     filter_option = request.args.get("filter")
     sort_by = request.args.get("sort_by")
     sort_order = request.args.get("sort_order", "asc")
@@ -198,15 +197,17 @@ def viewer():
     if filter_option == "under50":
         query += " AND price < 50"
     elif filter_option == "this_week":
+        from datetime import datetime, timedelta
         next_week = (datetime.utcnow() + timedelta(days=7)).date()
         query += " AND expiry_date <= %s"
         params.append(next_week)
     elif filter_option == "this_month":
+        from datetime import datetime, timedelta
         next_month = (datetime.utcnow().replace(day=28) + timedelta(days=4)).replace(day=1)
         query += " AND expiry_date <= %s"
         params.append(next_month.date())
 
-    # sort the deals by price and expiry
+    # sort the deals by price and expiry    
     if sort_by in ["price", "expiry_date"]:
         query += f" ORDER BY {sort_by} {sort_order.upper()}"
 
@@ -214,11 +215,110 @@ def viewer():
     cursor = connection.cursor(dictionary=True)
     cursor.execute(query, tuple(params))
     deals = cursor.fetchall()
+
+    # get saved deals for current user
+    email = session["user"]["email"]
+    cursor.execute("SELECT id FROM customers WHERE email = %s", (email,))
+    customer = cursor.fetchone()
+    saved_ids = []
+
+    if customer:
+        cursor.execute("SELECT deal_id FROM saved_deals WHERE customer_id = %s", (customer["id"],))
+        saved = cursor.fetchall()
+        saved_ids = [s["deal_id"] for s in saved]
+
     cursor.close()
     connection.close()
 
-    return render_template('viewer.html', user=session["user"], deals=deals)
+    return render_template('viewer.html', user=session["user"], deals=deals, saved_ids=saved_ids)
 
+
+
+## save a deal
+@app.route('/save/<int:dealid>')
+def save_deal(dealid):
+    if "user" not in session:
+        return redirect("/viewer")
+
+    # get customer id from db using session email
+    email = session["user"]["email"]
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT id FROM customers WHERE email = %s", (email,))
+    customer = cursor.fetchone()
+
+    if customer:
+        customer_id = customer[0]
+
+        # try to insert saved deal. ignore if already exists.
+        try:
+            cursor.execute(
+                "INSERT INTO saved_deals (customer_id, deal_id) VALUES (%s, %s)",
+                (customer_id, dealid)
+            )
+            connection.commit()
+        except mysql.connector.errors.IntegrityError:
+            # already saved. should toggle removal here if you want?! maybe later.
+            pass
+
+    cursor.close()
+    connection.close()
+    return redirect("/viewer")
+
+## unsave a deal
+@app.route('/unsave/<int:dealid>')
+def unsave_deal(dealid):
+    if "user" not in session:
+        return redirect("/viewer")
+
+    email = session["user"]["email"]
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    cursor.execute("SELECT id FROM customers WHERE email = %s", (email,))
+    customer = cursor.fetchone()
+
+    if customer:
+        customer_id = customer[0]
+        cursor.execute(
+            "DELETE FROM saved_deals WHERE customer_id = %s AND deal_id = %s",
+            (customer_id, dealid)
+        )
+        connection.commit()
+
+    cursor.close()
+    connection.close()
+    return redirect("/viewer")
+
+## view all saved deals
+@app.route('/viewer/saved')
+def viewer_saved():
+    if "user" not in session:
+        return redirect("/viewer")
+
+    email = session["user"]["email"]
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("SELECT id FROM customers WHERE email = %s", (email,))
+    customer = cursor.fetchone()
+
+    if customer:
+        customer_id = customer["id"]
+        cursor.execute("""
+            SELECT d.* FROM deals d
+            JOIN saved_deals s ON d.dealid = s.deal_id
+            WHERE s.customer_id = %s
+        """, (customer_id,))
+        saved_deals = cursor.fetchall()
+    else:
+        saved_deals = []
+
+    cursor.close()
+    connection.close()
+
+    return render_template('viewer_saved.html', user=session["user"], deals=saved_deals)
 
 
 ## just to see if something turns up or not

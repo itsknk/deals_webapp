@@ -95,6 +95,7 @@
   <div class="top-bar">
     <h1>Live Deals</h1>
     <div class="profile">
+      <a href="/viewer/saved" style="margin-right: 15px;">My Saved Deals</a>
       <a href="/logout">Logout</a>
       <img src="{{ user.picture }}" alt="Profile" />
     </div>
@@ -153,7 +154,14 @@
         <td>{{ deal.expiry_date }}</td>
         <td>{{ deal.promotion }}</td>
         <td>{{ deal.description }}</td>
-        <td><a href="{{ deal.affiliate_link }}" target="_blank">View</a></td>
+        <td>
+          <a href="{{ deal.affiliate_link }}" target="_blank">View</a> |
+            {% if deal.dealid in saved_ids %}
+            <a href="/unsave/{{ deal.dealid }}">❤️</a>
+            {% else %}
+          <a href="/save/{{ deal.dealid }}">Save</a>
+            {% endif %}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
