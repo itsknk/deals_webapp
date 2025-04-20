@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS deals (
     promotion VARCHAR(255),
     description TEXT,
     affiliate_link VARCHAR(2083),
-    category VARCHAR(100)
+    category VARCHAR(100),
+    click_count INT DEFAULT 0
 );
 
 -- customers table

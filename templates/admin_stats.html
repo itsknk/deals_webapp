@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin Stats</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 40px;
+    }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    .back-btn {
+      padding: 10px 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .stats-box {
+      background: white;
+      padding: 25px;
+      margin-top: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .stats-box h2 {
+      margin-bottom: 20px;
+      color: #555;
+    }
+
+    .stats-list p {
+      font-size: 16px;
+      margin: 8px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+      background: #fff;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f4f4f4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <h1>📊 Admin Usage Stats</h1>
+    <button class="back-btn" onclick="window.location.href='/admin/dashboard'">← Back to Dashboard</button>
+  </div>
+
+  <div class="stats-box">
+    <h2>Overview</h2>
+    <div class="stats-list">
+      <p><strong>Total Customers:</strong> <span id="totalCustomers">...</span></p>
+      <p><strong>Total Deals:</strong> <span id="totalDeals">...</span></p>
+    </div>
+  </div>
+
+  <div class="stats-box">
+    <h2>🔥 Top Saved Deals</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Deal</th>
+          <th>Times Saved</th>
+        </tr>
+      </thead>
+      <tbody id="topDealsBody"></tbody>
+    </table>
+  </div>
+
+  <div class="stats-box">
+    <h2>👀 Deal Click Rates</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Deal</th>
+          <th>Click Count</th>
+        </tr>
+      </thead>
+      <tbody id="clicksBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const token = localStorage.getItem("token");
+
+    if (!token) {
+      alert("Unauthorized. Please log in as admin.");
+      location.href = "/admin/login";
+    }
+
+    fetch("/admin/stats", {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("totalCustomers").textContent = data.total_customers;
+      document.getElementById("totalDeals").textContent = data.total_deals;
+
+      const topDeals = data.top_saved_deals;
+      const topBody = document.getElementById("topDealsBody");
+      topDeals.forEach(deal => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${deal.title}</td>
+          <td>${deal.save_count}</td>
+        `;
+        topBody.appendChild(row);
+      });
+
+      const clicks = data.deal_clicks;
+      const clicksBody = document.getElementById("clicksBody");
+      clicks.forEach(deal => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${deal.title}</td>
+          <td>${deal.clicks}</td>
+        `;
+        clicksBody.appendChild(row);
+      });
+    })
+    .catch(err => {
+      console.error("Failed to fetch stats:", err);
+      alert("Could not load stats.");
+    });
+  </script>
+
+</body>
+</html>

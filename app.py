@@ -475,7 +475,7 @@ def admin_stats_api():
     top_saved_deals = cursor.fetchall()
 
     cursor.execute("""
-        SELECT d.title, d.click_count FROM deals d
+        SELECT d.title, d.click_count as clicks FROM deals d
         ORDER BY d.click_count DESC
         LIMIT 5
     """)
@@ -490,6 +490,28 @@ def admin_stats_api():
         "top_saved_deals": top_saved_deals,
         "deal_clicks": deal_clicks
     })
+
+# user click count tracking
+@app.route('/click/<int:dealid>')
+def track_click_and_redirect(dealid):
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    # increment click_count
+    cursor.execute("UPDATE deals SET click_count = click_count + 1 WHERE dealid = %s", (dealid,))
+    connection.commit()
+
+    # get the affiliate link
+    cursor.execute("SELECT affiliate_link FROM deals WHERE dealid = %s", (dealid,))
+    result = cursor.fetchone()
+
+    cursor.close()
+    connection.close()
+
+    if result and result["affiliate_link"]:
+        return redirect(result["affiliate_link"])
+    else:
+        return "Deal not found or missing link.", 404
 
 
 ## CLIENT GOOGLE LOGIN AREA

@@ -59,12 +59,25 @@
       justify-content: space-between;
       align-items: center;
     }
+    .stats-btn {
+    background-color: white;
+    color: #007bff;
+    border: 2px solid #007bff;
+    margin-right: 10px;
+  }
+  .stats-btn:hover {
+    background-color: #007bff;
+    color: white;
+  }
   </style>
 </head>
 <body>
   <div class="top-bar">
     <h1>Admin Dashboard</h1>
-    <button class="add-btn" onclick="location.href='/admin/add'">+ Add New Deal</button>
+    <div>
+      <button class="stats-btn" onclick="location.href='/admin/stats/view'">📈 View Stats</button>
+      <button class="add-btn" onclick="location.href='/admin/add'">+ Add New Deal</button>
+    </div>
   </div>
 
   <table>

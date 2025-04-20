@@ -184,7 +184,7 @@
         <p><strong>Expires:</strong> {{ deal.expiry_date }}</p>
         <p><strong>Saved:</strong> {{ deal.save_count }}</p>
         <p>
-          <a href="{{ deal.affiliate_link }}" target="_blank">View</a> |
+          <a href="/click/{{ deal.dealid }}" target="_blank">View</a> |
           {% if deal.dealid in saved_ids %}
             <a href="/unsave/{{ deal.dealid }}">❤️</a>
           {% else %}
@@ -221,7 +221,7 @@
         <td>{{ deal.description }}</td>
         <td>{{ deal.category or '-' }}</td>
         <td>
-          <a href="{{ deal.affiliate_link }}" target="_blank">View</a> |
+          <a href="/click/{{ deal.dealid }}" target="_blank">View</a> |
           {% if deal.dealid in saved_ids %}
             <a href="/unsave/{{ deal.dealid }}">❤️</a>
           {% else %}
