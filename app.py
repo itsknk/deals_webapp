@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from requests_oauthlib import OAuth2Session
+from datetime import datetime, timedelta
 from flask_session import Session
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -180,12 +181,44 @@ def delete_deal(dealid):
     connection.close()
     return jsonify({"message": "Deal deleted"}), 200
 
-
+## now filters and sorts!
 @app.route('/viewer')
 def viewer():
     if "user" not in session:
-        return render_template('viewer_login.html')  # shows login button
-    return render_template('viewer.html', user=session["user"])  # shows deals
+        return render_template('viewer_login.html')
+
+    # Filters
+    filter_option = request.args.get("filter")
+    sort_by = request.args.get("sort_by")
+    sort_order = request.args.get("sort_order", "asc")
+
+    query = "SELECT * FROM deals WHERE 1=1"
+    params = []
+
+    if filter_option == "under50":
+        query += " AND price < 50"
+    elif filter_option == "this_week":
+        next_week = (datetime.utcnow() + timedelta(days=7)).date()
+        query += " AND expiry_date <= %s"
+        params.append(next_week)
+    elif filter_option == "this_month":
+        next_month = (datetime.utcnow().replace(day=28) + timedelta(days=4)).replace(day=1)
+        query += " AND expiry_date <= %s"
+        params.append(next_month.date())
+
+    # sort the deals by price and expiry
+    if sort_by in ["price", "expiry_date"]:
+        query += f" ORDER BY {sort_by} {sort_order.upper()}"
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute(query, tuple(params))
+    deals = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    return render_template('viewer.html', user=session["user"], deals=deals)
+
 
 
 ## just to see if something turns up or not

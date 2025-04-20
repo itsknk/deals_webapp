@@ -2,54 +2,137 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Deals Viewer</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      font-family: Arial, sans-serif;
       background-color: #f9f9f9;
       margin: 0;
-      padding: 20px;
+      padding: 0 40px;
     }
+
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+    }
+
+    .profile {
+      display: flex;
+      align-items: center;
+    }
+
+    .profile img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      margin-left: 12px;
+    }
+
     h1 {
       text-align: center;
-      color: #333;
+      margin-bottom: 20px;
     }
+
+    .search-bar {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .search-bar input {
+      width: 50%;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
-      margin-top: 20px;
-      background-color: #fff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      border-radius: 8px;
-      overflow: hidden;
+      margin: auto;
+      background-color: white;
+      box-shadow: 0 0 5px rgba(0,0,0,0.1);
     }
+
     th, td {
-      padding: 12px 15px;
+      padding: 14px 10px;
+      text-align: left;
       border-bottom: 1px solid #eee;
     }
+
     th {
-      background-color: #f1f1f1;
-      font-weight: bold;
+      background-color: #f4f4f4;
     }
-    tr:hover {
-      background-color: #f9f9f9;
-    }
+
     a {
       color: #007BFF;
       text-decoration: none;
     }
+
     a:hover {
       text-decoration: underline;
     }
   </style>
+
+  <script>
+    function searchDeals() {
+      const input = document.getElementById("searchInput").value.toLowerCase();
+      const rows = document.querySelectorAll("tbody tr");
+
+      rows.forEach(row => {
+        const title = row.querySelector("td:nth-child(2)").innerText.toLowerCase();
+        const desc = row.querySelector("td:nth-child(6)").innerText.toLowerCase();
+
+        row.style.display = (title.includes(input) || desc.includes(input)) ? "" : "none";
+      });
+    }
+  </script>
 </head>
 <body>
-  <h1>Live Deals</h1>
-  <h2>Welcome, {{ user.name }}</h2>
-<img src="{{ user.picture }}" alt="Profile Picture" width="50" />
-<a href="/logout">Logout</a>
-  <table id="dealsTable">
+
+  <div class="top-bar">
+    <h1>Live Deals</h1>
+    <div class="profile">
+      <a href="/logout">Logout</a>
+      <img src="{{ user.picture }}" alt="Profile" />
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search deals..." onkeyup="searchDeals()" />
+  </div>
+
+  <form method="GET" action="/viewer" style="text-align: center; margin-bottom: 20px;">
+  <label>Filter: </label>
+  <select name="filter">
+    <option value="">All</option>
+    <option value="under50">Under $50</option>
+    <option value="this_week">Expiring This Week</option>
+    <option value="this_month">Expiring This Month</option>
+  </select>
+
+  <label style="margin-left: 20px;">Sort By:</label>
+  <select name="sort_by">
+    <option value="">None</option>
+    <option value="price">Price</option>
+    <option value="expiry_date">Expiry Date</option>
+  </select>
+
+  <select name="sort_order">
+    <option value="asc">Asc</option>
+    <option value="desc">Desc</option>
+  </select>
+
+  <button type="submit" style="margin-left: 15px; padding: 6px 14px;">Apply</button>
+</form>
+
+{% if deals|length == 0 %}
+  <p style="text-align: center; font-weight: bold; color: #999;">No deals found.</p>
+{% else %}
+
+  <table>
     <thead>
       <tr>
         <th>ID</th>
@@ -61,32 +144,21 @@
         <th>Link</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody>
+      {% for deal in deals %}
+      <tr>
+        <td>{{ deal.dealid }}</td>
+        <td>{{ deal.title }}</td>
+        <td>${{ '%.2f' % deal.price }}</td>
+        <td>{{ deal.expiry_date }}</td>
+        <td>{{ deal.promotion }}</td>
+        <td>{{ deal.description }}</td>
+        <td><a href="{{ deal.affiliate_link }}" target="_blank">View</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
   </table>
+{% endif %}
 
-  <script>
-    fetch('/deals')
-      .then(res => res.json())
-      .then(deals => {
-        const tbody = document.querySelector('#dealsTable tbody');
-        deals.forEach(deal => {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${deal.dealid}</td>
-            <td>${deal.title}</td>
-            <td>$${deal.price}</td>
-            <td>${deal.expiry_date}</td>
-            <td>${deal.promotion}</td>
-            <td>${deal.description}</td>
-            <td><a href="${deal.affiliate_link}" target="_blank">View</a></td>
-          `;
-          tbody.appendChild(row);
-        });
-      })
-      .catch(err => {
-        alert('Failed to load deals.');
-        console.error(err);
-      });
-  </script>
 </body>
 </html>
