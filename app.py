@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, render_template, session, redirect, u
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 from requests_oauthlib import OAuth2Session
 from datetime import datetime, timedelta
+from flask_socketio import SocketIO
 from flask_session import Session
 from dotenv import load_dotenv
 from flask_cors import CORS
@@ -16,6 +17,8 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'  # allow http for local dev for 
 
 
 app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), 'templates'))
+socketio = SocketIO(app, cors_allowed_origins="*")
+
 
 # cors(app)
 CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
@@ -106,6 +109,18 @@ def create_deal():
     ))
 
     connection.commit()
+    # broadcast new deal to viewers
+    deal_info = {
+        "title": data["title"],
+        "price": data["price"],
+        "expiry_date": data["expiry_date"],
+        "promotion": data["promotion"],
+        "description": data["description"],
+        "affiliate_link": data["affiliate_link"],
+        "category": data.get("category", "")
+    }
+    socketio.emit('new_deal', deal_info, namespace="/")
+
     cursor.close()
     connection.close()
     return jsonify({"message": "Deal created"}), 201
@@ -166,6 +181,18 @@ def update_deal(dealid):
     ))
 
     connection.commit()
+    updated_info = {
+        "dealid": dealid,
+        "title": data["title"],
+        "price": data["price"],
+        "expiry_date": data["expiry_date"],
+        "promotion": data["promotion"],
+        "description": data["description"],
+        "affiliate_link": data["affiliate_link"],
+        "category": data.get("category", "")
+    }
+    socketio.emit("deal_updated", updated_info, namespace="/")
+
     cursor.close()
     connection.close()
     return jsonify({"message": "Deal updated"}), 200
@@ -184,6 +211,7 @@ def delete_deal(dealid):
     # then remove from deals (parent table)
     cursor.execute("DELETE FROM deals WHERE dealid = %s", (dealid,))
     connection.commit()
+    socketio.emit("deal_deleted", {"dealid": dealid}, namespace="/")
 
     cursor.close()
     connection.close()
@@ -597,4 +625,5 @@ def logout():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5050)
+    socketio.run(app, debug=True, port=5050)
+

@@ -236,5 +236,26 @@
 {% endif %}
 
 
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<script>
+  const socket = io();
+
+  socket.on("new_deal", (deal) => {
+    alert("🚨 New deal added: " + deal.title);
+    window.location.reload();
+  });
+
+  socket.on("deal_updated", (deal) => {
+    alert("✏️ A deal was updated: " + deal.title);
+    window.location.reload();  // can be better to update DOM in-place later?! come back to this.
+  });
+
+  socket.on("deal_deleted", (data) => {
+    alert("❌ A deal was removed.");
+    window.location.reload();  // or should i hide the row dynamically?! let's see.
+  });
+</script>
+
+
 </body>
 </html>
